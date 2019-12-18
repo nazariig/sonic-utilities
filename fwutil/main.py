@@ -8,7 +8,6 @@
 try:
     import click
     import os
-    import tempfile
     from lib import PlatformDataProvider, ComponentStatusProvider, ComponentUpdateProvider
     from lib import URL, SquashFs
     from log import LogHelper
@@ -26,7 +25,6 @@ COMPONENT_PATH_CTX_KEY = "component_path"
 URL_CTX_KEY = "url"
 
 TAB = "    "
-FW_SUFFIX = ".fw"
 PATH_SEPARATOR = "/"
 IMAGE_NEXT = "next"
 HELP = "?"
@@ -157,23 +155,20 @@ def install_fw(ctx, fw_path):
 
 
 def download_fw(ctx, url):
-    fw_path_tmp = None
-
-    with tempfile.NamedTemporaryFile(suffix=FW_SUFFIX, delete=True) as file_tmp:
-        fw_path_tmp = file_tmp.name
+    filename, headers = None, None
 
     component_path = PATH_SEPARATOR.join(ctx.obj[COMPONENT_PATH_CTX_KEY])
 
     try:
         click.echo("Downloading firmware:")
         log_helper.log_fw_download_start(component_path, str(url))
-        filename, headers = url.retrieve(fw_path_tmp)
+        filename, headers = url.retrieve()
         log_helper.log_fw_download_end(component_path, str(url), True)
     except Exception as e:
         log_helper.log_fw_download_end(component_path, str(url), False, e)
         cli_abort(ctx, str(e))
 
-    return fw_path_tmp
+    return filename
 
 
 def validate_fw(ctx, param, value):

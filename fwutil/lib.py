@@ -13,6 +13,7 @@ try:
     import subprocess
     import sonic_device_util
     from collections import OrderedDict
+    from urlparse import urlparse
     from tabulate import tabulate
     from log import LogHelper
     from . import Platform
@@ -43,6 +44,8 @@ class URL(object):
     PB_LABEL = "  "
     PB_INFO_SEPARATOR = " | "
     PB_FULL_TERMINAL_WIDTH = 0
+
+    TMP_PATH = "/tmp"
 
     def __init__(self, url):
         self.__url = url
@@ -96,13 +99,24 @@ class URL(object):
 
         return False
 
-    def retrieve(self, fw_path):
-        self.__validate()
-
+    def retrieve(self):
         filename, headers = None, None
 
+        self.__validate()
+
+        result = urlparse(self.__url)
+        basename = os.path.basename(result.path)
+        name, extension = os.path.splitext(basename)
+
+        if not extension:
+            raise RuntimeError("Filename is malformed: did not find an extension")
+
         try:
-            filename, headers = urllib.urlretrieve(self.__url, fw_path, self.__reporthook)
+            filename, headers = urllib.urlretrieve(
+                self.__url,
+                "{}/{}".format(self.TMP_PATH, basename),
+                self.__reporthook
+            )
         finally:
             self.__pb_reset()
 
