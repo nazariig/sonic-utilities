@@ -18,6 +18,7 @@ import sonic_device_util
 from swsssdk import ConfigDBConnector
 from swsssdk import SonicV2Connector
 
+import fwutil
 import mlnx
 
 SONIC_CFGGEN_PATH = '/usr/local/bin/sonic-cfggen'
@@ -1525,6 +1526,14 @@ def ssdhealth(device, verbose, vendor):
     options = " -v" if verbose else ""
     options += " -e" if vendor else ""
     run_command(cmd + options, display_cmd=verbose)
+
+# 'firmware' subcommand ("show platform firmware")
+@platform.command()
+@click.pass_context
+def firmware(ctx):
+    """Show firmware status information"""
+    fwutil.main.cli_init(ctx)
+    ctx.invoke(fwutil.main.status)
 
 #
 # 'logging' command ("show logging")

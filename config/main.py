@@ -18,6 +18,7 @@ from swsssdk import SonicV2Connector
 from minigraph import parse_device_desc_xml
 
 import aaa
+import fwutil
 import mlnx
 
 CONTEXT_SETTINGS = dict(help_option_names=['-h', '--help', '-?'])
@@ -1999,6 +2000,16 @@ def platform():
 
 if asic_type == 'mellanox':
     platform.add_command(mlnx.mlnx)
+
+# 'firmware' subgroup ("config platform firmware")
+@platform.group()
+@click.pass_context
+def firmware(ctx):
+    """Firmware configuration tasks"""
+    fwutil.main.cli_init(ctx)
+
+firmware.add_command(fwutil.main.install)
+firmware.add_command(fwutil.main.update)
 
 #
 # 'watermark' group ("show watermark telemetry interval")
