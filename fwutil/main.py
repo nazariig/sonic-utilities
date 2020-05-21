@@ -329,8 +329,8 @@ def fw_update(ctx, yes, force, image):
         finally:
             if squashfs is not None:
                 squashfs.umount_next_image_fs()
-    except click.exceptions.Exit as e:
-        ctx.exit(e.exit_code)
+    except click.exceptions.Abort:
+        ctx.abort()
     except Exception as e:
         cli_abort(ctx, str(e))
 
