@@ -302,10 +302,7 @@ def fw_update(ctx, yes, force, image):
 
                 if squashfs.is_next_boot_set():
                     fs_path = squashfs.mount_next_image_fs()
-                    if not yes:
-                        click.confirm("New firmware will be installed, continue?", abort=True)
                     cup = ComponentUpdateProvider(fs_path)
-
                 else:
                     log_helper.print_warning("Next boot is set to current: fallback to defaults")
                     cup = ComponentUpdateProvider()
