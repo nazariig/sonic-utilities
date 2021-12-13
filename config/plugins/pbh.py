@@ -11,36 +11,14 @@ import ipaddress
 import re
 import utilities_common.cli as clicommon
 
-#hash_field_types = [
-#    "INNER_IP_PROTOCOL",
-#    "INNER_L4_DST_PORT",
-#    "INNER_L4_SRC_PORT",
-#    "INNER_DST_IPV4",
-#    "INNER_SRC_IPV4",
-#    "INNER_DST_IPV6",
-#    "INNER_SRC_IPV6"
-#]
-#packet_action_types = ["SET_ECMP_HASH", "SET_LAG_HASH"]
-#flow_counter_state = ["DISABLED", "ENABLED"]
+GRE_KEY_RE = r"^(0x){1}[a-fA-F0-9]{1,8}/(0x){1}[a-fA-F0-9]{1,8}$"
 
-gre_key_re = r"^(0x){1}[a-fA-F0-9]{1,8}/(0x){1}[a-fA-F0-9]{1,8}$"
-ip_protocol_re = r"^(0x){1}[a-fA-F0-9]{1,2}$"
-ipv6_next_header_re = ip_protocol_re
-l4_dst_port_re = r"^(0x){1}[a-fA-F0-9]{1,4}$"
-inner_ether_type_re = l4_dst_port_re
-ether_type_re = l4_dst_port_re
+ETHER_TYPE_RE = r"^(0x){1}[a-fA-F0-9]{1,4}$"
+L4_DST_PORT_RE = ETHER_TYPE_RE
+INNER_ETHER_TYPE_RE = ETHER_TYPE_RE
 
-#pbh_hash_field_tbl_name = 'PBH_HASH_FIELD'
-#pbh_hash_tbl_name = 'PBH_HASH'
-#pbh_table_tbl_name = 'PBH_TABLE'
-
-
-
-
-
-
-
-# ---------------------------------------------------------------------------------------------------------------------
+IP_PROTOCOL_RE = r"^(0x){1}[a-fA-F0-9]{1,2}$"
+IPV6_NEXT_HEADER_RE = IP_PROTOCOL_RE
 
 HASH_FIELD_VALUE_LIST = [
     "INNER_IP_PROTOCOL",
@@ -98,90 +76,6 @@ PBH_ADD = "ADD"
 PBH_UPDATE = "UPDATE"
 PBH_REMOVE = "REMOVE"
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#PBH_CAPABILITIES_TABLE = "PBH_CAPABILITIES"
-
-#PBH_TABLE_CAPABILITIES = "PBH_CAPABILITIES|table"
-#PBH_RULE_CAPABILITIES = "PBH_CAPABILITIES|rule"
-#PBH_HASH_CAPABILITIES_TNAME = "PBH_CAPABILITIES|hash"
-#PBH_HASH_FIELD_CAPABILITIES_KEY = "PBH_CAPABILITIES|hash-field"
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-#    table = "PBH_RULE"
-#    key = table_name, rule_name
-#    data = {}
-
-
-
-
-
-#    if hash is not None:
-#        data["hash"] = hash
-#    if packet_action is not None:
-#        data["packet_action"] = packet_action
-#    if flow_counter is not None:
-#        data["flow_counter"] = flow_counter
-
-
-
-
-
-
-
-
-
-
-
-
-#
-# def cli_
-
-
-
-
-
-
-def exit_with_error(*args, **kwargs):
-    """ Print a message and abort CLI. """
-
-    click.secho(*args, **kwargs)
-    raise click.Abort()
-
-
-
-
-
-
-
 #
 # DB interface --------------------------------------------------------------------------------------------------------
 #
@@ -193,69 +87,28 @@ def add_entry(db, table, key, data):
     cfg.setdefault(table, {})
 
     if key in cfg[table]:
-        raise click.ClickException("{} already exists".format(key))
+        raise click.ClickException("{}{}{} already exists in Config DB".format(
+                table, db.TABLE_NAME_SEPARATOR, db.serialize_key(key)
+            )
+        )
 
     cfg[table][key] = data
 
-    # DEBUG
-    print("=> ADD")
-    print(cfg[table][key])
-    #db.set_entry(table, key, data)
+    db.set_entry(table, key, data)
 
 
 def update_entry(db, cap, table, key, data):
     """ Update entry in table and validate configuration.
-        If field value in data is None, the field is deleted.
+        If field value in data is None, the field is deleted
     """
-
-    #cfg = db.get_config()
-
-    #print('--==--')
-    #print(cap)
-    #raise click.ClickException("{}{}{} doesn't exist in Config DB".format(table, db.TABLE_NAME_SEPARATOR, db.serialize_key(key)))
-
 
     field_root = "{}{}{}".format(table, db.TABLE_NAME_SEPARATOR, db.serialize_key(key))
 
-    #print("=> chk!")
-
-    #import pdb; pdb.set_trace()
-    #rt = table not in cfg
-    #print("=> chk!")
-
     cfg = db.get_config()
-    #print("=> chk!")
-    #import pdb; pdb.set_trace()
-    if (table not in cfg) or (key not in cfg[table]):
-        #sdb_id = sdb.STATE_DB
-        #sdb_sep = sdb.get_db_separator(sdb_id)
-        #serialize_key
-        #skey = 
+    cfg.setdefault(table, {})
+
+    if key not in cfg[table]:
         raise click.ClickException("{} doesn't exist in Config DB".format(field_root))
-    #
-    # 
-    # if key not in cfg[table]:
-    #    raise Exception("{} does not exist".format(key))
-
-
-
-
-    #
-    # 
-    # cfg.setdefault(table, {})
-
-
-    #if field in cfg[table][key]:
-
-
-    #if value is None and field in cfg[table][key]:
-    #    if cap[field] not in cap
-
-
-
-    #if value is None and field in cfg[table][key]:
-
-
 
     for field, value in data.items():
         if field not in cap:
@@ -298,10 +151,7 @@ def update_entry(db, cap, table, key, data):
 
             cfg[table][key][field] = value
 
-    # DEBUG
-    print("=> UPDATE")
-    print(cfg[table][key])
-    #db.set_entry(table, key, cfg[table][key])
+    db.set_entry(table, key, cfg[table][key])
 
 
 def del_entry(db, table, key):
@@ -311,14 +161,14 @@ def del_entry(db, table, key):
     cfg.setdefault(table, {})
 
     if key not in cfg[table]:
-        raise click.ClickException("{} does not exist".format(key))
+        raise click.ClickException("{}{}{} doesn't exist in Config DB".format(
+                table, db.TABLE_NAME_SEPARATOR, db.serialize_key(key)
+            )
+        )
 
     cfg[table].pop(key)
 
-    # DEBUG
-    print("=> REMOVE")
-    print(cfg[table][key])
-    #db.set_entry(table, key, None)
+    db.set_entry(table, key, None)
 
 
 def is_exist_in_db(db, table, key):
@@ -420,12 +270,13 @@ def hash_validator(ctx, db, hash):
         )
 
 
-def re_match(value, param_name, regexp):
-    """ Regexp validation of given parameter
+def re_match(ctx, param, value, regexp):
+    """ Regexp validation of given PBH rule parameter
 
         Args:
+            ctx: click context
+            param: click parameter context
             value: value to validate
-            param_name: parameter name
             regexp: regular expression
 
         Return:
@@ -433,7 +284,9 @@ def re_match(value, param_name, regexp):
     """
 
     if re.match(regexp, str(value)) is None:
-        exit_with_error("Error: invalid value '{}' for '{}' option".format(str(value), param_name), fg="red")
+        raise click.UsageError(
+            "Invalid value for {}: {} is ill-formed".format(param.get_error_hint(ctx), value), ctx
+        )
 
     return value
 
@@ -452,25 +305,36 @@ def match_validator(ctx, param, value):
 
     if value is not None:
         if param.name == PBH_RULE_GRE_KEY:
-            return re_match(value, param.name, gre_key_re)
+            return re_match(ctx, param, value, GRE_KEY_RE)
         elif param.name == PBH_RULE_ETHER_TYPE:
-            return re_match(value, param.name, ether_type_re)
+            return re_match(ctx, param, value, ETHER_TYPE_RE)
         elif param.name == PBH_RULE_IP_PROTOCOL:
-            return re_match(value, param.name, ip_protocol_re)
+            return re_match(ctx, param, value, IP_PROTOCOL_RE)
         elif param.name == PBH_RULE_IPV6_NEXT_HEADER:
-            return re_match(value, param.name, ipv6_next_header_re)
+            return re_match(ctx, param, value, IPV6_NEXT_HEADER_RE)
         elif param.name == PBH_RULE_L4_DST_PORT:
-            return re_match(value, param.name, l4_dst_port_re)
+            return re_match(ctx, param, value, L4_DST_PORT_RE)
         elif param.name == PBH_RULE_INNER_ETHER_TYPE:
-            return re_match(value, param.name, inner_ether_type_re)
+            return re_match(ctx, param, value, INNER_ETHER_TYPE_RE)
 
 
 def ip_mask_validator(ctx, param, value):
+    """ Check if PBH hash field IP mask option is valid
+
+        Args:
+            ctx: click context
+            param: click parameter context
+            value: value of parameter
+
+        Returns:
+            str: validated parameter
+    """
+
     if value is not None:
         try:
             ip = ipaddress.ip_address(value)
         except Exception as err:
-            raise click.UsageError("Invalid value for \"--ip-mask\": {}".format(err), ctx)
+            raise click.UsageError("Invalid value for {}: {}".format(param.get_error_hint(ctx), err), ctx)
 
         return str(ip)
 
@@ -511,16 +375,14 @@ def hash_field_to_ip_mask_correspondence_validator(ctx, hash_field, ip_mask):
     if (hash_field in hf_v4) and (ip_ver != 4):
         raise click.UsageError(
             "Invalid value for \"--ip-mask\": {} is not compatible with {}".format(
-                ip_mask,
-                hash_field
+                ip_mask, hash_field
             ), ctx
         )
 
     if (hash_field in hf_v6) and (ip_ver != 6):
         raise click.UsageError(
             "Invalid value for \"--ip-mask\": {} is not compatible with {}".format(
-                ip_mask,
-                hash_field
+                ip_mask, hash_field
             ), ctx
         )
 
@@ -576,6 +438,8 @@ def hash_field_to_ip_mask_validator(ctx, db, hash_field_name, hash_field, ip_mas
 #
 
 def pbh_capabilities_query(db, key):
+    """ Query PBH capabilities """
+
     sdb_id = db.STATE_DB
     sdb_sep = db.get_db_separator(sdb_id)
 
@@ -584,6 +448,35 @@ def pbh_capabilities_query(db, key):
         return None
 
     return cap_map
+
+
+def pbh_match_count(db, table, key):
+    """ Count PBH rule match fields """
+
+    match_count = 0
+    field_map = db.get_entry(table, key)
+
+    if PBH_RULE_GRE_KEY in field_map:
+        match_count += 1
+    if PBH_RULE_ETHER_TYPE in field_map:
+        match_count += 1
+    if PBH_RULE_IP_PROTOCOL in field_map:
+        match_count += 1
+    if PBH_RULE_IPV6_NEXT_HEADER in field_map:
+        match_count += 1
+    if PBH_RULE_L4_DST_PORT in field_map:
+        match_count += 1
+    if PBH_RULE_INNER_ETHER_TYPE in field_map:
+        match_count += 1
+
+    return match_count
+
+
+def exit_with_error(*args, **kwargs):
+    """ Print a message and abort CLI """
+
+    click.secho(*args, **kwargs)
+    raise click.Abort()
 
 #
 # PBH CLI -------------------------------------------------------------------------------------------------------------
@@ -1226,20 +1119,28 @@ def PBH_RULE_update_field_del(
     key = (str(table_name), str(rule_name))
     data = {}
 
+    match_count = 0
+
     if priority:
         data[PBH_RULE_PRIORITY] = None
     if gre_key:
         data[PBH_RULE_GRE_KEY] = None
+        match_count += 1
     if ether_type:
         data[PBH_RULE_ETHER_TYPE] = None
+        match_count += 1
     if ip_protocol:
         data[PBH_RULE_IP_PROTOCOL] = None
+        match_count += 1
     if ipv6_next_header:
         data[PBH_RULE_IPV6_NEXT_HEADER] = None
+        match_count += 1
     if l4_dst_port:
         data[PBH_RULE_L4_DST_PORT] = None
+        match_count += 1
     if inner_ether_type:
         data[PBH_RULE_INNER_ETHER_TYPE] = None
+        match_count += 1
     if hash:
         data[PBH_RULE_HASH] = None
     if packet_action:
@@ -1249,6 +1150,9 @@ def PBH_RULE_update_field_del(
 
     if not data:
         exit_with_error("Error: Failed to update PBH rule: options are not provided", fg="red")
+
+    if match_count >= pbh_match_count(db.cfgdb, table, key):
+        exit_with_error("Error: Failed to update PBH rule: match options are required", fg="red")
 
     cap = pbh_capabilities_query(db.db, PBH_RULE_CAPABILITIES_KEY)
     if cap is None:
