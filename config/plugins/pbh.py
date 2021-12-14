@@ -450,26 +450,40 @@ def pbh_capabilities_query(db, key):
     return cap_map
 
 
-def pbh_match_count(db, table, key):
+def pbh_match_count(db, table, key, data):
     """ Count PBH rule match fields """
 
-    match_count = 0
     field_map = db.get_entry(table, key)
 
-    if PBH_RULE_GRE_KEY in field_map:
-        match_count += 1
-    if PBH_RULE_ETHER_TYPE in field_map:
-        match_count += 1
-    if PBH_RULE_IP_PROTOCOL in field_map:
-        match_count += 1
-    if PBH_RULE_IPV6_NEXT_HEADER in field_map:
-        match_count += 1
-    if PBH_RULE_L4_DST_PORT in field_map:
-        match_count += 1
-    if PBH_RULE_INNER_ETHER_TYPE in field_map:
-        match_count += 1
+    match_total = 0
+    match_count = 0
 
-    return match_count
+    if PBH_RULE_GRE_KEY in field_map:
+        if PBH_RULE_GRE_KEY in data:
+            match_count += 1
+        match_total += 1
+    if PBH_RULE_ETHER_TYPE in field_map:
+        if PBH_RULE_ETHER_TYPE in data:
+            match_count += 1
+        match_total += 1
+    if PBH_RULE_IP_PROTOCOL in field_map:
+        if PBH_RULE_IP_PROTOCOL in data:
+            match_count += 1
+        match_total += 1
+    if PBH_RULE_IPV6_NEXT_HEADER in field_map:
+        if PBH_RULE_IPV6_NEXT_HEADER in data:
+            match_count += 1
+        match_total += 1
+    if PBH_RULE_L4_DST_PORT in field_map:
+        if PBH_RULE_L4_DST_PORT in data:
+            match_count += 1
+        match_total += 1
+    if PBH_RULE_INNER_ETHER_TYPE in field_map:
+        if PBH_RULE_INNER_ETHER_TYPE in data:
+            match_count += 1
+        match_total += 1
+
+    return match_total, match_count
 
 
 def exit_with_error(*args, **kwargs):
@@ -1119,28 +1133,20 @@ def PBH_RULE_update_field_del(
     key = (str(table_name), str(rule_name))
     data = {}
 
-    match_count = 0
-
     if priority:
         data[PBH_RULE_PRIORITY] = None
     if gre_key:
         data[PBH_RULE_GRE_KEY] = None
-        match_count += 1
     if ether_type:
         data[PBH_RULE_ETHER_TYPE] = None
-        match_count += 1
     if ip_protocol:
         data[PBH_RULE_IP_PROTOCOL] = None
-        match_count += 1
     if ipv6_next_header:
         data[PBH_RULE_IPV6_NEXT_HEADER] = None
-        match_count += 1
     if l4_dst_port:
         data[PBH_RULE_L4_DST_PORT] = None
-        match_count += 1
     if inner_ether_type:
         data[PBH_RULE_INNER_ETHER_TYPE] = None
-        match_count += 1
     if hash:
         data[PBH_RULE_HASH] = None
     if packet_action:
@@ -1151,7 +1157,8 @@ def PBH_RULE_update_field_del(
     if not data:
         exit_with_error("Error: Failed to update PBH rule: options are not provided", fg="red")
 
-    if match_count >= pbh_match_count(db.cfgdb, table, key):
+    match_total, match_count = pbh_match_count(db.cfgdb, table, key, data)
+    if match_count >= match_total:
         exit_with_error("Error: Failed to update PBH rule: match options are required", fg="red")
 
     cap = pbh_capabilities_query(db.db, PBH_RULE_CAPABILITIES_KEY)
