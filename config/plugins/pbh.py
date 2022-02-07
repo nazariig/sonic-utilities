@@ -548,8 +548,8 @@ def PBH_HASH_FIELD_add(db, hash_field_name, hash_field, ip_mask, sequence_id):
 
     ctx = click.get_current_context()
 
-    hash_field_name_validator(ctx, db.cfgdb, hash_field_name, False)
-    hash_field_to_ip_mask_validator(ctx, db.cfgdb, hash_field_name, hash_field, ip_mask, False)
+    hash_field_name_validator(ctx, db.cfgdb_pipe, hash_field_name, False)
+    hash_field_to_ip_mask_validator(ctx, db.cfgdb_pipe, hash_field_name, hash_field, ip_mask, False)
 
     table = str(PBH_HASH_FIELD_CDB)
     key = str(hash_field_name)
@@ -566,7 +566,7 @@ def PBH_HASH_FIELD_add(db, hash_field_name, hash_field, ip_mask, sequence_id):
         exit_with_error("Error: Failed to add PBH hash field: options are not provided", fg="red")
 
     try:
-        add_entry(db.cfgdb, table, key, data)
+        add_entry(db.cfgdb_pipe, table, key, data)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 
@@ -598,8 +598,8 @@ def PBH_HASH_FIELD_update(db, hash_field_name, hash_field, ip_mask, sequence_id)
 
     ctx = click.get_current_context()
 
-    hash_field_name_validator(ctx, db.cfgdb, hash_field_name)
-    hash_field_to_ip_mask_validator(ctx, db.cfgdb, hash_field_name, hash_field, ip_mask)
+    hash_field_name_validator(ctx, db.cfgdb_pipe, hash_field_name)
+    hash_field_to_ip_mask_validator(ctx, db.cfgdb_pipe, hash_field_name, hash_field, ip_mask)
 
     table = str(PBH_HASH_FIELD_CDB)
     key = str(hash_field_name)
@@ -637,13 +637,13 @@ def PBH_HASH_FIELD_delete(db, hash_field_name):
 
     ctx = click.get_current_context()
 
-    hash_field_name_validator(ctx, db.cfgdb, hash_field_name)
+    hash_field_name_validator(ctx, db.cfgdb_pipe, hash_field_name)
 
     table = str(PBH_HASH_FIELD_CDB)
     key = str(hash_field_name)
 
     try:
-        del_entry(db.cfgdb, table, key)
+        del_entry(db.cfgdb_pipe, table, key)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 
@@ -678,21 +678,21 @@ def PBH_HASH_add(db, hash_name, hash_field_list):
 
     ctx = click.get_current_context()
 
-    hash_name_validator(ctx, db.cfgdb, hash_name, False)
+    hash_name_validator(ctx, db.cfgdb_pipe, hash_name, False)
 
     table = str(PBH_HASH_CDB)
     key = str(hash_name)
     data = {}
 
     if hash_field_list is not None:
-        hash_field_list_validator(ctx, db.cfgdb, hash_field_list)
+        hash_field_list_validator(ctx, db.cfgdb_pipe, hash_field_list)
         data[PBH_HASH_HASH_FIELD_LIST] = hash_field_list.split(",")
 
     if not data:
         exit_with_error("Error: Failed to add PBH hash: options are not provided", fg="red")
 
     try:
-        add_entry(db.cfgdb, table, key, data)
+        add_entry(db.cfgdb_pipe, table, key, data)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 
@@ -713,14 +713,14 @@ def PBH_HASH_update(db, hash_name, hash_field_list):
 
     ctx = click.get_current_context()
 
-    hash_name_validator(ctx, db.cfgdb, hash_name)
+    hash_name_validator(ctx, db.cfgdb_pipe, hash_name)
 
     table = str(PBH_HASH_CDB)
     key = str(hash_name)
     data = {}
 
     if hash_field_list is not None:
-        hash_field_list_validator(ctx, db.cfgdb, hash_field_list)
+        hash_field_list_validator(ctx, db.cfgdb_pipe, hash_field_list)
         data[PBH_HASH_HASH_FIELD_LIST] = hash_field_list.split(",")
 
     if not data:
@@ -748,13 +748,13 @@ def PBH_HASH_delete(db, hash_name):
 
     ctx = click.get_current_context()
 
-    hash_name_validator(ctx, db.cfgdb, hash_name)
+    hash_name_validator(ctx, db.cfgdb_pipe, hash_name)
 
     table = str(PBH_HASH_CDB)
     key = str(hash_name)
 
     try:
-        del_entry(db.cfgdb, table, key)
+        del_entry(db.cfgdb_pipe, table, key)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 
@@ -854,8 +854,8 @@ def PBH_RULE_add(
 
     ctx = click.get_current_context()
 
-    table_name_validator(ctx, db.cfgdb, table_name)
-    rule_name_validator(ctx, db.cfgdb, table_name, rule_name, False)
+    table_name_validator(ctx, db.cfgdb_pipe, table_name)
+    rule_name_validator(ctx, db.cfgdb_pipe, table_name, rule_name, False)
 
     table = str(PBH_RULE_CDB)
     key = (str(table_name), str(rule_name))
@@ -884,7 +884,7 @@ def PBH_RULE_add(
         data[PBH_RULE_INNER_ETHER_TYPE] = inner_ether_type
         match_count += 1
     if hash is not None:
-        hash_validator(ctx, db.cfgdb, hash)
+        hash_validator(ctx, db.cfgdb_pipe, hash)
         data[PBH_RULE_HASH] = hash
     if packet_action is not None:
         data[PBH_RULE_PACKET_ACTION] = packet_action
@@ -898,7 +898,7 @@ def PBH_RULE_add(
         exit_with_error("Error: Failed to add PBH rule: match options are not provided", fg="red")
 
     try:
-        add_entry(db.cfgdb, table, key, data)
+        add_entry(db.cfgdb_pipe, table, key, data)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 
@@ -1003,8 +1003,8 @@ def PBH_RULE_update_field_set(
 
     ctx = click.get_current_context()
 
-    table_name_validator(ctx, db.cfgdb, table_name)
-    rule_name_validator(ctx, db.cfgdb, table_name, rule_name)
+    table_name_validator(ctx, db.cfgdb_pipe, table_name)
+    rule_name_validator(ctx, db.cfgdb_pipe, table_name, rule_name)
 
     table = str(PBH_RULE_CDB)
     key = (str(table_name), str(rule_name))
@@ -1025,7 +1025,7 @@ def PBH_RULE_update_field_set(
     if inner_ether_type is not None:
         data[PBH_RULE_INNER_ETHER_TYPE] = inner_ether_type
     if hash is not None:
-        hash_validator(ctx, db.cfgdb, hash)
+        hash_validator(ctx, db.cfgdb_pipe, hash)
         data[PBH_RULE_HASH] = hash
     if packet_action is not None:
         data[PBH_RULE_PACKET_ACTION] = packet_action
@@ -1126,8 +1126,8 @@ def PBH_RULE_update_field_del(
 
     ctx = click.get_current_context()
 
-    table_name_validator(ctx, db.cfgdb, table_name)
-    rule_name_validator(ctx, db.cfgdb, table_name, rule_name)
+    table_name_validator(ctx, db.cfgdb_pipe, table_name)
+    rule_name_validator(ctx, db.cfgdb_pipe, table_name, rule_name)
 
     table = str(PBH_RULE_CDB)
     key = (str(table_name), str(rule_name))
@@ -1157,7 +1157,7 @@ def PBH_RULE_update_field_del(
     if not data:
         exit_with_error("Error: Failed to update PBH rule: options are not provided", fg="red")
 
-    match_total, match_count = pbh_match_count(db.cfgdb, table, key, data)
+    match_total, match_count = pbh_match_count(db.cfgdb_pipe, table, key, data)
     if match_count >= match_total:
         exit_with_error("Error: Failed to update PBH rule: match options are required", fg="red")
 
@@ -1188,14 +1188,14 @@ def PBH_RULE_delete(db, table_name, rule_name):
 
     ctx = click.get_current_context()
 
-    table_name_validator(ctx, db.cfgdb, table_name)
-    rule_name_validator(ctx, db.cfgdb, table_name, rule_name)
+    table_name_validator(ctx, db.cfgdb_pipe, table_name)
+    rule_name_validator(ctx, db.cfgdb_pipe, table_name, rule_name)
 
     table = str(PBH_RULE_CDB)
     key = (str(table_name), str(rule_name))
 
     try:
-        del_entry(db.cfgdb, table, key)
+        del_entry(db.cfgdb_pipe, table, key)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 
@@ -1235,14 +1235,14 @@ def PBH_TABLE_add(db, table_name, interface_list, description):
 
     ctx = click.get_current_context()
 
-    table_name_validator(ctx, db.cfgdb, table_name, False)
+    table_name_validator(ctx, db.cfgdb_pipe, table_name, False)
 
     table = str(PBH_TABLE_CDB)
     key = str(table_name)
     data = {}
 
     if interface_list is not None:
-        interface_list_validator(ctx, db.cfgdb, interface_list)
+        interface_list_validator(ctx, db.cfgdb_pipe, interface_list)
         data[PBH_TABLE_INTERFACE_LIST] = interface_list.split(",")
     if description is not None:
         data[PBH_TABLE_DESCRIPTION] = description
@@ -1251,7 +1251,7 @@ def PBH_TABLE_add(db, table_name, interface_list, description):
         exit_with_error("Error: Failed to add PBH table: options are not provided", fg="red")
 
     try:
-        add_entry(db.cfgdb, table, key, data)
+        add_entry(db.cfgdb_pipe, table, key, data)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 
@@ -1276,14 +1276,14 @@ def PBH_TABLE_update(db, table_name, interface_list, description):
 
     ctx = click.get_current_context()
 
-    table_name_validator(ctx, db.cfgdb, table_name)
+    table_name_validator(ctx, db.cfgdb_pipe, table_name)
 
     table = str(PBH_TABLE_CDB)
     key = str(table_name)
     data = {}
 
     if interface_list is not None:
-        interface_list_validator(ctx, db.cfgdb, interface_list)
+        interface_list_validator(ctx, db.cfgdb_pipe, interface_list)
         data[PBH_TABLE_INTERFACE_LIST] = interface_list.split(",")
     if description is not None:
         data[PBH_TABLE_DESCRIPTION] = description
@@ -1313,13 +1313,13 @@ def PBH_TABLE_delete(db, table_name):
 
     ctx = click.get_current_context()
 
-    table_name_validator(ctx, db.cfgdb, table_name)
+    table_name_validator(ctx, db.cfgdb_pipe, table_name)
 
     table = str(PBH_TABLE_CDB)
     key = str(table_name)
 
     try:
-        del_entry(db.cfgdb, table, key)
+        del_entry(db.cfgdb_pipe, table, key)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 
