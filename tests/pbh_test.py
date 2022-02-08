@@ -608,9 +608,30 @@ class TestPBH:
             config.config.commands["pbh"].commands["rule"].
             commands["update"].commands["field"].
             commands["set"], ["pbh_table1", "vxlan ",
-            "--priority", "3", "--inner-ether-type", "0x86dd",
-            "--packet-action", "SET_ECMP_HASH", "--flow-counter",
+            "--priority", "3", "--inner-ether-type", "0x086d",
+            "--packet-action", "SET_LAG_HASH", "--flow-counter",
             "DISABLED"], obj=db
+        )
+
+        logger.debug("\n" + result.output)
+        logger.debug(result.exit_code)
+        assert result.exit_code == SUCCESS
+
+
+    def test_config_pbh_rule_update_nvgre_to_vxlan(self):
+        dbconnector.dedicated_dbs['CONFIG_DB'] = os.path.join(mock_db_path, 'rule')
+        dbconnector.dedicated_dbs['STATE_DB'] = os.path.join(mock_db_path, 'state_db')
+
+        db = Db()
+        runner = CliRunner()
+
+        result = runner.invoke(
+            config.config.commands["pbh"].commands["rule"].
+            commands["add"],["pbh_table1", "nvgre", "--priority", "1",
+            "--ether-type", "0x0800", "--ip-protocol", "0x2f",
+            "--gre-key", "0x2500/0xffffff00", "--inner-ether-type",
+            "0x86dd", "--hash", "inner_v6_hash", "--packet-action",
+            "SET_ECMP_HASH", "--flow-counter", "DISABLED"], obj=db
         )
 
         logger.debug("\n" + result.output)
@@ -620,7 +641,21 @@ class TestPBH:
         result = runner.invoke(
             config.config.commands["pbh"].commands["rule"].
             commands["update"].commands["field"].
-            commands["del"], ["pbh_table1", "vxlan ",
+            commands["set"], ["pbh_table1", "nvgre",
+            "--ether-type", "0x86dd", "--ipv6-next-header", "0x11",
+            "--l4-dst-port", "0x12b5", "--inner-ether-type", "0x0800",
+            "--hash", "inner_v4_hash"], obj=db
+        )
+
+        logger.debug("\n" + result.output)
+        logger.debug(result.exit_code)
+        assert result.exit_code == SUCCESS
+
+        result = runner.invoke(
+            config.config.commands["pbh"].commands["rule"].
+            commands["update"].commands["field"].
+            commands["del"], ["pbh_table1", "nvgre",
+            "--ip-protocol", "--gre-key",
             "--packet-action", "--flow-counter"], obj=db
         )
 

@@ -122,7 +122,6 @@ class SwssSyncClient(mockredis.MockRedis):
 
     # Patch mockredis/mockredis/client.py
     # The offical implementation assume decode_responses=False
-    # Here we detect the option and decode after doing encode
     def _common_scan(self, values_function, cursor='0', match=None, count=10, key=None):
         """
         Common scanning skeleton.
