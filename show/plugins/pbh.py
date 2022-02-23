@@ -93,7 +93,7 @@ def PBH_HASH_FIELD(db):
 
     body = []
 
-    table = db.cfgdb.get_table(pbh_hash_field_tbl_name)
+    table = db.cfgdb_pipe.get_table(pbh_hash_field_tbl_name)
     for key in natsort.natsorted(table):
 
         entry = table[key]
@@ -158,7 +158,7 @@ def PBH_HASH(db):
 
     body = []
 
-    table = db.cfgdb.get_table(pbh_hash_tbl_name)
+    table = db.cfgdb_pipe.get_table(pbh_hash_tbl_name)
     for key in natsort.natsorted(table):
         entry = table[key]
         if not isinstance(key, tuple):
@@ -203,7 +203,7 @@ def PBH_RULE(db):
 
     body = []
 
-    table = db.cfgdb.get_table(pbh_rule_tbl_name)
+    table = db.cfgdb_pipe.get_table(pbh_rule_tbl_name)
     for key in natsort.natsorted(table):
         entry = table[key]
         if not isinstance(key, tuple):
@@ -322,7 +322,7 @@ def PBH_TABLE(db):
 
     body = []
 
-    table = db.cfgdb.get_table(pbh_table_tbl_name)
+    table = db.cfgdb_pipe.get_table(pbh_table_tbl_name)
     for key in natsort.natsorted(table):
         entry = table[key]
         if not isinstance(key, tuple):
@@ -374,7 +374,7 @@ def PBH_STATISTICS(db):
 
     body = []
 
-    pbh_rules = db.cfgdb.get_table(pbh_rule_tbl_name)
+    pbh_rules = db.cfgdb_pipe.get_table(pbh_rule_tbl_name)
     pbh_counters = read_pbh_counters(pbh_rules)
     saved_pbh_counters = read_saved_pbh_counters()
 
