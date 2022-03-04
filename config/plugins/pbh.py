@@ -7,9 +7,12 @@ CLI Auto-generation tool HLD - https://github.com/Azure/SONiC/pull/78
 """
 
 import click
+import json
 import ipaddress
 import re
 import utilities_common.cli as clicommon
+
+from show.plugins.pbh import deserialize_pbh_counters
 
 GRE_KEY_RE = r"^(0x){1}[a-fA-F0-9]{1,8}/(0x){1}[a-fA-F0-9]{1,8}$"
 
@@ -75,6 +78,8 @@ PBH_HASH_FIELD_CAPABILITIES_KEY = "hash-field"
 PBH_ADD = "ADD"
 PBH_UPDATE = "UPDATE"
 PBH_REMOVE = "REMOVE"
+
+PBH_COUNTERS_LOCATION = "/tmp/.pbh_counters.txt"
 
 #
 # DB interface --------------------------------------------------------------------------------------------------------
@@ -436,6 +441,51 @@ def hash_field_to_ip_mask_validator(ctx, db, hash_field_name, hash_field, ip_mas
 #
 # PBH helpers ---------------------------------------------------------------------------------------------------------
 #
+
+def serialize_pbh_counters(obj):
+    """ Helper that performs PBH counters serialization.
+
+        in = {
+            ('pbh_table1', 'pbh_rule1'): {'SAI_ACL_COUNTER_ATTR_BYTES': '0', 'SAI_ACL_COUNTER_ATTR_PACKETS': '0'},
+            ...
+            ('pbh_tableN', 'pbh_ruleN'): {'SAI_ACL_COUNTER_ATTR_BYTES': '0', 'SAI_ACL_COUNTER_ATTR_PACKETS': '0'}
+        }
+
+        out = [
+            {
+                "key": ["pbh_table1", "pbh_rule1"],
+                "value": {"SAI_ACL_COUNTER_ATTR_BYTES": "0", "SAI_ACL_COUNTER_ATTR_PACKETS": "0"}
+            },
+            ...
+            {
+                "key": ["pbh_tableN", "pbh_ruleN"],
+                "value": {"SAI_ACL_COUNTER_ATTR_BYTES": "0", "SAI_ACL_COUNTER_ATTR_PACKETS": "0"}
+            }
+        ]
+
+        Args:
+            obj: counters dict.
+    """
+
+    def remap_keys(obj):
+        return [{'key': k, 'value': v} for k, v in obj.items()]
+
+    try:
+        with open(PBH_COUNTERS_LOCATION, 'w') as f:
+            json.dump(remap_keys(obj), f)
+    except IOError as err:
+        pass
+
+
+def update_pbh_counters(table_name, rule_name):
+    """ Helper that performs PBH counters update """
+    pbh_counters = deserialize_pbh_counters()
+    key_to_del = table_name, rule_name
+
+    if key_to_del in pbh_counters:
+        del pbh_counters[key_to_del]
+        serialize_pbh_counters(pbh_counters)
+
 
 def pbh_capabilities_query(db, key):
     """ Query PBH capabilities """
@@ -1041,6 +1091,8 @@ def PBH_RULE_update_field_set(
 
     try:
         update_entry(db.cfgdb_pipe, cap, table, key, data)
+        if data.get(PBH_RULE_FLOW_COUNTER, "") == "DISABLED":
+            update_pbh_counters(table_name, rule_name)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 
@@ -1167,6 +1219,8 @@ def PBH_RULE_update_field_del(
 
     try:
         update_entry(db.cfgdb_pipe, cap, table, key, data)
+        if flow_counter:
+            update_pbh_counters(table_name, rule_name)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 
@@ -1196,6 +1250,7 @@ def PBH_RULE_delete(db, table_name, rule_name):
 
     try:
         del_entry(db.cfgdb_pipe, table, key)
+        update_pbh_counters(table_name, rule_name)
     except Exception as err:
         exit_with_error("Error: {}".format(err), fg="red")
 

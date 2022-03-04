@@ -8,6 +8,7 @@ import json
 
 from utilities_common import util_base
 from show.plugins.pbh import read_pbh_counters
+from config.plugins.pbh import serialize_pbh_counters
 from . import plugins
 
 
@@ -473,14 +474,8 @@ def statistics(db):
     pbh_rules = db.cfgdb.get_table("PBH_RULE")
     pbh_counters = read_pbh_counters(pbh_rules)
 
-    try:
-        with open('/tmp/.pbh_counters.txt', 'w') as fp:
-            json.dump(remap_keys(pbh_counters), fp)
-    except IOError as err:
-        pass
+    serialize_pbh_counters(pbh_counters)
 
-def remap_keys(dict):
-    return [{'key': k, 'value': v} for k, v in dict.items()]
 
 # ("sonic-clear flowcnt-trap")
 @cli.command()
