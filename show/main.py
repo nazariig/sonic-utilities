@@ -59,6 +59,7 @@ from . import vxlan
 from . import system_health
 from . import warm_restart
 from . import plugins
+from . import syslog
 
 # Global Variables
 PLATFORM_JSON = 'platform.json'
@@ -280,6 +281,9 @@ cli.add_command(vnet.vnet)
 cli.add_command(vxlan.vxlan)
 cli.add_command(system_health.system_health)
 cli.add_command(warm_restart.warm_restart)
+
+# syslog module
+cli.add_command(syslog.syslog)
 
 # Add greabox commands only if GEARBOX is configured
 if is_gearbox_configured():
