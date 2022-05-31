@@ -227,7 +227,7 @@ def source_validator(ctx, server, source):
         )
 
     server_ip = ipaddress.ip_address(server)
-    if (server_ip.version != source_ip.version):
+    if server_ip.version != source_ip.version:
         raise click.UsageError("Invalid value for {} / {}: {} / {} IP address family mismatch".format(
             get_param_hint(ctx, "server_ip_address"), get_param_hint(ctx, "source"), server, source), ctx
         )
