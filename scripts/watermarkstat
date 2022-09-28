@@ -201,7 +201,7 @@ class Watermarkstat(object):
 
         return pg_index
 
-    def build_header(self, wm_type):
+    def build_header(self, wm_type, counter_type):
         if wm_type is None:
             print("Header info is not available!", file=sys.stderr)
             sys.exit(1)
@@ -220,8 +220,12 @@ class Watermarkstat(object):
                     min_idx = element_idx
 
         if min_idx == sys.maxsize:
-            print("Object map is empty!", file=sys.stderr)
-            sys.exit(1)
+            if counter_type != 'q_shared_multi':
+                print("Object map is empty!", file=sys.stderr)
+                sys.exit(1)
+            else:
+                print("Object map from the COUNTERS_DB is empty because the multicast queues are not configured in the CONFIG_DB!")
+                sys.exit(0)
 
         self.min_idx = min_idx
         self.header_list += ["{}{}".format(wm_type["header_prefix"], idx) for idx in range(self.min_idx, max_idx + 1)]
@@ -261,7 +265,7 @@ class Watermarkstat(object):
                     data = STATUS_NA
                 table.append((buf_pool, data))
         else:
-            self.build_header(type)
+            self.build_header(type, key)
             # Get stat for each port
             for port in natsorted(self.counter_port_name_map):
                 row_data = list()
