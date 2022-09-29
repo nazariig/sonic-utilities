@@ -1,17 +1,12 @@
-import imp
 import json
 import os
 import sys
+import pytest
 
 from click.testing import CliRunner
-from unittest import TestCase
-from swsscommon.swsscommon import ConfigDBConnector
-
-from .mock_tables import dbconnector
 
 import show.main as show
 from utilities_common.cli import json_dump
-from utilities_common.db import Db
 
 test_path = os.path.dirname(os.path.abspath(__file__))
 modules_path = os.path.dirname(test_path)
@@ -895,6 +890,60 @@ show_queue_counters_port_json = """\
   }
 }"""
 
+show_queue_watermark_multicast = """\
+Egress shared pool occupancy per multicast queue:
+     Port    MC10    MC11    MC12    MC13    MC14    MC15    MC16    MC17    MC18    MC19
+---------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------
+Ethernet0     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A
+Ethernet4     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A
+Ethernet8     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A
+"""
+
+show_queue_watermark_unicast = """\
+Egress shared pool occupancy per unicast queue:
+     Port      UC0      UC1    UC2    UC3    UC4    UC5    UC6    UC7    UC8    UC9
+---------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----
+Ethernet0  2057328  2056704      0      0      0      0      0   2704    416     20
+Ethernet4        0        0      0   1986   2567      0      0      0      0      0
+Ethernet8        0        0   1040      0      0      0      0      0   8528   7696
+"""
+
+show_queue_watermark_all = """\
+Egress shared pool occupancy per all queues:
+     Port    ALL20    ALL21    ALL22    ALL23    ALL24    ALL25    ALL26    ALL27    ALL28    ALL29
+---------  -------  -------  -------  -------  -------  -------  -------  -------  -------  -------
+Ethernet0  1234567  7654321        0        0        0       20      500      200        0       10
+Ethernet4        0        0        0     1986     2567        0        0        0        0        0
+Ethernet8       20        5     1998        0        0        0        0        0     8528     7696
+"""
+
+show_queue_persistent_watermark_multicast = """\
+Egress shared pool occupancy per multicast queue:
+     Port    MC10    MC11    MC12    MC13    MC14    MC15    MC16    MC17    MC18    MC19
+---------  ------  ------  ------  ------  ------  ------  ------  ------  ------  ------
+Ethernet0     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A
+Ethernet4     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A
+Ethernet8     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A     N/A
+"""
+
+show_queue_persistent_watermark_unicast = """\
+Egress shared pool occupancy per unicast queue:
+     Port      UC0      UC1    UC2    UC3    UC4    UC5    UC6    UC7    UC8    UC9
+---------  -------  -------  -----  -----  -----  -----  -----  -----  -----  -----
+Ethernet0  3057328  3056704      0      0      0      0      0   3704    516     30
+Ethernet4        0        0      0   2986   3567      0      0      0      0      0
+Ethernet8        0        0   2040      0      0      0      0      0   9528   8696
+"""
+
+show_queue_persistent_watermark_all = """\
+Egress shared pool occupancy per all queues:
+     Port    ALL20    ALL21    ALL22    ALL23    ALL24    ALL25    ALL26    ALL27    ALL28    ALL29
+---------  -------  -------  -------  -------  -------  -------  -------  -------  -------  -------
+Ethernet0      N/A      N/A      N/A      N/A      N/A      N/A      N/A      N/A      N/A      N/A
+Ethernet4      N/A      N/A      N/A      N/A      N/A      N/A      N/A      N/A      N/A      N/A
+Ethernet8      N/A      N/A      N/A      N/A      N/A      N/A      N/A      N/A      N/A      N/A
+"""
+
 
 class TestQueue(object):
     @classmethod
@@ -952,6 +1001,26 @@ class TestQueue(object):
         for _, v in json_output.items():
             del v["time"]
         assert json_dump(json_output) == show_queue_counters_port_json 
+
+
+    @pytest.mark.parametrize("counter,counter_type,output", [
+        ('watermark', 'multicast', show_queue_watermark_multicast),
+        ('watermark', 'unicast', show_queue_watermark_unicast),
+        ('watermark', 'all', show_queue_watermark_all),
+        ('persistent-watermark', 'multicast', show_queue_persistent_watermark_multicast),
+        ('persistent-watermark', 'unicast', show_queue_persistent_watermark_unicast),
+        ('persistent-watermark', 'all', show_queue_persistent_watermark_all)
+    ])
+    def test_queue_counters_all_multi_uni(self, counter, counter_type, output):
+        runner = CliRunner()
+        result = runner.invoke(
+            show.cli.commands["queue"].commands[counter].commands[counter_type],
+            []
+        )
+        assert result.exit_code == 0
+        print(result.output)
+
+        assert result.output == output
 
     @classmethod
     def teardown_class(cls):
