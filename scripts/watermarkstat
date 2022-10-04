@@ -21,8 +21,16 @@ try:
         tests_path = os.path.join(modules_path, "tests")
         sys.path.insert(0, modules_path)
         sys.path.insert(0, tests_path)
-        import mock_tables.dbconnector
+        from mock_tables import dbconnector
 
+        if os.environ["WATERMARKSTAT_UNIT_TESTING"] == "1":
+            input_path = os.path.join(tests_path, "wm_input")
+            mock_db_path = os.path.join(input_path, "mock_db")
+
+            for mock_db in os.listdir(mock_db_path):
+                name, ext = os.path.splitext(mock_db)
+                if ext == ".json":
+                    dbconnector.dedicated_dbs[name.upper()] = os.path.join(mock_db_path, name)
 except KeyError:
     pass
 
