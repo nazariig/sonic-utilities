@@ -6,6 +6,19 @@ import click
 import tabulate
 import utilities_common.cli as clicommon
 
+from utilities_common.switch_hash import (
+    CFG_SWITCH_HASH,
+    STATE_SWITCH_CAPABILITY,
+    SW_CAP_HASH_FIELD_LIST_KEY,
+    SW_CAP_ECMP_HASH_KEY,
+    SW_CAP_LAG_HASH_KEY,
+    SW_HASH_KEY,
+    SW_CAP_KEY,
+)
+
+#
+# Hash helpers --------------------------------------------------------------------------------------------------------
+#
 
 def format_attr_value(entry, attr):
     """ Helper that formats attribute to be presented in the table output.
@@ -23,6 +36,9 @@ def format_attr_value(entry, attr):
         return "\n".join(value) if value else "N/A"
     return entry.get(attr["name"], "N/A")
 
+#
+# Hash CLI ------------------------------------------------------------------------------------------------------------
+#
 
 @click.group(
     name="switch-hash",
@@ -47,8 +63,8 @@ def SWITCH_HASH_GLOBAL(db):
     ]
     body = []
 
-    table = db.cfgdb.get_table("SWITCH_HASH")
-    entry = table.get("GLOBAL", {})
+    table = db.cfgdb.get_table(CFG_SWITCH_HASH)
+    entry = table.get(SW_HASH_KEY, {})
 
     if not entry:
         click.echo(tabulate.tabulate(body, header))
@@ -69,6 +85,55 @@ def SWITCH_HASH_GLOBAL(db):
                 'is-leaf-list': True
             }
         ),
+    ]
+    body.append(row)
+
+    click.echo(tabulate.tabulate(body, header))
+
+
+@SWITCH_HASH.command(
+    name="capabilities"
+)
+@clicommon.pass_db
+def SWITCH_HASH_CAPABILITIES(db):
+    """ Show switch hash capabilities """
+
+    header = [
+        "ECMP HASH",
+        "LAG HASH",
+    ]
+    body = []
+
+    entry = db.db.get_all(db.db.STATE_DB, "{}|{}".format(STATE_SWITCH_CAPABILITY, SW_CAP_KEY))
+
+    if not entry:
+        click.echo(tabulate.tabulate(body, header))
+        return
+
+    entry.setdefault(SW_CAP_HASH_FIELD_LIST_KEY, 'N/A')
+    entry.setdefault(SW_CAP_ECMP_HASH_KEY, 'false')
+    entry.setdefault(SW_CAP_LAG_HASH_KEY, 'false')
+
+    if not entry[SW_CAP_HASH_FIELD_LIST_KEY]:
+        entry[SW_CAP_HASH_FIELD_LIST_KEY] = "no capabilities"
+
+    entry[SW_CAP_HASH_FIELD_LIST_KEY] = entry[SW_CAP_HASH_FIELD_LIST_KEY].split(',')
+
+    row = [
+        format_attr_value(
+            entry,
+            {
+                'name': SW_CAP_HASH_FIELD_LIST_KEY,
+                'is-leaf-list': True
+            }
+        ) if entry[SW_CAP_ECMP_HASH_KEY] == 'true' else 'not supported',
+        format_attr_value(
+            entry,
+            {
+                'name': SW_CAP_HASH_FIELD_LIST_KEY,
+                'is-leaf-list': True
+            }
+        ) if entry[SW_CAP_LAG_HASH_KEY] == 'true' else 'not supported',
     ]
     body.append(row)
 
