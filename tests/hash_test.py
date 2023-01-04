@@ -1,5 +1,3 @@
-#!/usr/bin/env python
-
 import pytest
 import os
 import logging
@@ -14,7 +12,8 @@ from .hash_input import assert_show_output
 
 test_path = os.path.dirname(os.path.abspath(__file__))
 input_path = os.path.join(test_path, "hash_input")
-mock_show_path = os.path.join(input_path, "mock_show")
+mock_config_path = os.path.join(input_path, "mock_config")
+mock_state_path = os.path.join(input_path, "mock_state")
 
 logger = logging.getLogger(__name__)
 
@@ -49,6 +48,7 @@ class TestHash:
     def setup_class(cls):
         logger.info("Setup class: {}".format(cls.__name__))
         os.environ['UTILITIES_UNIT_TESTING'] = "1"
+        dbconnector.dedicated_dbs["STATE_DB"] = os.path.join(mock_state_path, "ecmp_and_lag")
 
     @classmethod
     def teardown_class(cls):
@@ -114,6 +114,21 @@ class TestHash:
                 "DST_MAC SRC_MAC ETHERTYPE1",
                 "invalid choice: ETHERTYPE1.",
                 id="DST_MAC,SRC_MAC,INVALID"
+            ),
+            pytest.param(
+                "DST_MAC DST_MAC SRC_MAC ETHERTYPE",
+                "duplicate hash field(s) DST_MAC",
+                id="DUPLICATE,SRC_MAC,ETHERTYPE"
+            ),
+            pytest.param(
+                "DST_MAC DST_MAC SRC_MAC SRC_MAC ETHERTYPE",
+                "duplicate hash field(s) DST_MAC, SRC_MAC",
+                id="DUPLICATE,DUPLICATE,ETHERTYPE"
+            ),
+            pytest.param(
+                "DST_MAC DST_MAC SRC_MAC SRC_MAC ETHERTYPE ETHERTYPE",
+                "duplicate hash field(s) DST_MAC, SRC_MAC, ETHERTYPE",
+                id="DUPLICATE,DUPLICATE,DUPLICATE"
             )
         ]
     )
@@ -139,22 +154,22 @@ class TestHash:
     @pytest.mark.parametrize(
         "cfgdb,output", [
             pytest.param(
-                os.path.join(mock_show_path, "empty"),
+                os.path.join(mock_config_path, "empty"),
                 assert_show_output.show_hash_empty,
                 id="empty"
             ),
             pytest.param(
-                os.path.join(mock_show_path, "ecmp"),
+                os.path.join(mock_config_path, "ecmp"),
                 assert_show_output.show_hash_ecmp,
                 id="ecmp"
             ),
             pytest.param(
-                os.path.join(mock_show_path, "lag"),
+                os.path.join(mock_config_path, "lag"),
                 assert_show_output.show_hash_lag,
                 id="lag"
             ),
             pytest.param(
-                os.path.join(mock_show_path, "ecmp_and_lag"),
+                os.path.join(mock_config_path, "ecmp_and_lag"),
                 assert_show_output.show_hash_ecmp_and_lag,
                 id="all"
             )
@@ -169,6 +184,57 @@ class TestHash:
         result = runner.invoke(
             show.cli.commands["switch-hash"].
             commands["global"], [], obj=db
+        )
+
+        logger.debug("\n" + result.output)
+        logger.debug(result.exit_code)
+
+        assert result.output == output
+        assert result.exit_code == SUCCESS
+
+    @pytest.mark.parametrize(
+        "statedb,output", [
+            pytest.param(
+                os.path.join(mock_state_path, "no_capabilities"),
+                assert_show_output.show_hash_capabilities_no,
+                id="no"
+            ),
+            pytest.param(
+                os.path.join(mock_state_path, "not_applicable"),
+                assert_show_output.show_hash_capabilities_na,
+                id="na"
+            ),
+            pytest.param(
+                os.path.join(mock_state_path, "empty"),
+                assert_show_output.show_hash_capabilities_empty,
+                id="empty"
+            ),
+            pytest.param(
+                os.path.join(mock_state_path, "ecmp"),
+                assert_show_output.show_hash_capabilities_ecmp,
+                id="ecmp"
+            ),
+            pytest.param(
+                os.path.join(mock_state_path, "lag"),
+                assert_show_output.show_hash_capabilities_lag,
+                id="lag"
+            ),
+            pytest.param(
+                os.path.join(mock_state_path, "ecmp_and_lag"),
+                assert_show_output.show_hash_capabilities_ecmp_and_lag,
+                id="all"
+            )
+        ]
+    )
+    def test_show_hash_capabilities(self, statedb, output):
+        dbconnector.dedicated_dbs["STATE_DB"] = statedb
+
+        db = Db()
+        runner = CliRunner()
+
+        result = runner.invoke(
+            show.cli.commands["switch-hash"].
+            commands["capabilities"], [], obj=db
         )
 
         logger.debug("\n" + result.output)
