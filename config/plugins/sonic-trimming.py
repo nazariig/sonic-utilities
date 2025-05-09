@@ -13,6 +13,7 @@ from utilities_common.switch_trimming import (
     STATE_CAP_QUEUE_MODE_KEY,
     STATE_CAP_QUEUE_MODE_DYNAMIC,
     STATE_CAP_QUEUE_MODE_STATIC,
+    STATE_CAP_QUEUE_NUM_KEY,
     CFG_TRIM_QUEUE_INDEX_DYNAMIC,
     CFG_TRIM_KEY,
     STATE_CAP_KEY,
@@ -77,6 +78,7 @@ class QueueTypeValidator(click.ParamType):
 
         entry.setdefault(STATE_CAP_TRIMMING_CAPABLE_KEY, "false")
         entry.setdefault(STATE_CAP_QUEUE_MODE_KEY, "N/A")
+        entry.setdefault(STATE_CAP_QUEUE_NUM_KEY, "N/A")
 
         if entry[STATE_CAP_TRIMMING_CAPABLE_KEY] == "false":
             raise click.UsageError("Failed to configure {}: operation is not supported".format(
@@ -102,7 +104,10 @@ class QueueTypeValidator(click.ParamType):
             if verify_cap and (STATE_CAP_QUEUE_MODE_STATIC not in cap_list):
                 self.fail("static queue resolution mode is not supported", param, ctx)
 
-            click.IntRange(0, UINT8_MAX).convert(value, param, ctx)
+            if entry[STATE_CAP_QUEUE_NUM_KEY] == "N/A":
+                click.IntRange(0, UINT8_MAX).convert(value, param, ctx)
+            else:
+                click.IntRange(0, int(entry[STATE_CAP_QUEUE_NUM_KEY])-1).convert(value, param, ctx)
 
         return value
 
