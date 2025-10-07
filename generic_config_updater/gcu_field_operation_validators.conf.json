@@ -163,6 +163,16 @@
                             "j2c+": "20220500",
                             "cisco-8000": "20201200"
                         }
+                    },
+                    "Packet trimming eligibility modification": {
+                        "fields": [
+                            "packet_discard_action"
+                        ],
+                        "operations": ["add", "replace"],
+                        "platforms": {
+                            "spc4": "20241200",
+                            "spc5": "20241200"
+                        }
                     }
                 }
             }
